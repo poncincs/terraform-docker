@@ -35,7 +35,7 @@ variable "container_privileged" {
   default = true
 }
 
-variable "containers_numbers" {
+variable "containers_number" {
   description = "Number of containers to spawn"
   type = number
   default = 1

@@ -25,7 +25,6 @@ resource "docker_volume" "volume" {
 
 resource "docker_container" "nginx" {
   count = var.containers_number
-  image = var.container_image
   name  = "${var.container_name}-${count.index}"
   hostname = "${var.container_name}-${count.index}"
   image = docker_image.image.image_id
