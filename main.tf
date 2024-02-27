@@ -7,53 +7,51 @@ terraform {
   }
 }
 
-variable "image" {
-  description = "Docker image to use"
-  type = string
-}
-
-variable "memory" {
-  description = "Container memory"
-  type = string
-  default = "512m"
-}
-
-variable "privileged" {
-  description = "Whether the container should be privileged or not"
-  default = true
-}
-
-variable "num_containers" {
-  description = "Number of containers to spawn"
-  type = number
-  default = 1
-}
-
-variable "start_port" {
-  description = "Starting port number"
-  type = number
-  default = 3000
-}
-
-
 provider "docker" {
   host = "unix:///var/run/docker.sock"
 }
 
+# Create a docker image resource
+resource "docker_image" "image" {
+  name         = var.container_image
+  keep_locally = true
+}
+
+# Create a docker volume resource
+resource "docker_volume" "volume" {
+  count = var.containers_number
+  name  = "${var.container_volume}-${count.index}"
+}
+
 resource "docker_container" "nginx" {
-  image = var.image
-  name  = "nginx_${count.index}"
-  count = var.num_containers
+  count = var.containers_number
+  image = var.container_image
+  name  = "${var.container_name}-${count.index}"
+  hostname = "${var.container_name}-${count.index}"
+  image = docker_image.image.image_id
+  memory = var.container_memory
+  privileged = var.container_privileged
 
   ports {
-    internal = 80
-    external = var.start_port + count.index
+    external = var.ext_port + count.index
+    internal = var.int_port
   }
-
-  env = ["NGINX_HOSTNAME=${docker_container.nginx[count.index].name}"]
 
   volumes {
-    host_path      = "/opt/terraform/terraform-docker-module/index.html"
-    container_path = "/usr/share/nginx/html/index.html"
+    volume_name    = docker_volume.volume[count.index].name
+    container_path = "/usr/share/nginx/html"
+    read_only      = false
   }
+
+  healthcheck {
+    test = var.healthcheck_command
+    interval = "3s"
+    retries = 0
+  }
+  
+  command = [
+    "sh",
+    "-c",
+    "echo '<html><head><title>${var.container_name}-${count.index}</title></head><body><h1>Container Hostname: ${var.container_name}-${count.index}</h1></body></html>' > /usr/share/nginx/html/index.html && nginx -g 'daemon off;'"
+  ]
 }
