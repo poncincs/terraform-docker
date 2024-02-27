@@ -41,16 +41,22 @@ provider "docker" {
   host = "unix:///var/run/docker.sock"
 }
 
-
 resource "docker_container" "nginx" {
   image = var.image
-  name  = var.name
-  memory = var.memory
-  privileged = var.privileged
+  name  = "nginx_${count.index}"
   count = var.num_containers
 
   ports {
     internal = 80
-    external = 3000+${count.index}
+    external = var.start_port + count.index
+  }
+
+  env {
+    NGINX_HOSTNAME = "${docker_container.nginx.name}"
+  }
+
+  volume {
+    host_path      = "/opt/terraform/terraform-docker-module/index.html"
+    container_path = "/usr/share/nginx/html/index.html"
   }
 }
