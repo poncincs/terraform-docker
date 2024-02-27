@@ -20,7 +20,6 @@ variable "memory" {
 
 variable "privileged" {
   description = "Whether the container should be privileged or not"
-  type = boolean
   default = true
 }
 
@@ -51,11 +50,9 @@ resource "docker_container" "nginx" {
     external = var.start_port + count.index
   }
 
-  env {
-    NGINX_HOSTNAME = "${docker_container.nginx.name}"
-  }
+  env = ["NGINX_HOSTNAME=${docker_container.nginx[count.index].name}"]
 
-  volume {
+  volumes {
     host_path      = "/opt/terraform/terraform-docker-module/index.html"
     container_path = "/usr/share/nginx/html/index.html"
   }
