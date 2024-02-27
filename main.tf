@@ -23,7 +23,7 @@ resource "docker_volume" "volume" {
   name  = "${var.container_volume}-${count.index}"
 }
 
-resource "docker_container" "nginx" {
+resource "docker_container" "container" {
   count = var.containers_number
   name  = "${var.container_name}-${count.index}"
   hostname = "${var.container_name}-${count.index}"
